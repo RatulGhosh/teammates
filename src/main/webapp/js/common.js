@@ -7,7 +7,7 @@ var FEEDBACK_SESSION_INSTRUCTIONS_MAX_LENGTH = 500;
 // Field names
 var USER_ID = 'user';
 
-// Used in instructorCourse.js
+// Used in instructorCourses.js
 var COURSE_ID = 'courseid';
 var COURSE_NAME = 'coursename';
 var COURSE_INSTRUCTOR_NAME = 'instructorname';
@@ -19,7 +19,7 @@ var EVALUATION_START = 'start';
 var EVALUATION_STARTTIME = 'starttime';
 var EVALUATION_TIMEZONE = 'timezone';
 
-// Used in instructorFeedback.js
+// Used in instructorFeedbacks.js
 // TODO: Check if we can move most of these into instructorFeedback.js
 var FEEDBACK_SESSION_NAME = 'fsname'; // also used in feedbackResponseComments.js
 var FEEDBACK_SESSION_STARTDATE = 'startdate';
@@ -92,7 +92,7 @@ var DISPLAY_EMAIL_INVALID = 'The e-mail address is invalid.';
 var DISPLAY_NAME_INVALID = 'Name should only consist of alphanumerics or hyphens, apostrophes, fullstops, commas, slashes, round brackets<br> and not more than 40 characters.';
 var DISPLAY_STUDENT_TEAMNAME_INVALID = 'Team name should contain less than 60 characters.';
 
-// Used in instructorCourse.js only
+// Used in instructorCourses.js only
 var DISPLAY_COURSE_LONG_ID = 'Course ID should not exceed ' +
     COURSE_ID_MAX_LENGTH + ' characters.';
 var DISPLAY_COURSE_LONG_NAME = 'Course name should not exceed ' +
@@ -118,7 +118,7 @@ var DISPLAY_EVALUATION_SCHEDULEINVALID = 'The evaluation schedule (start/deadlin
 var DISPLAY_FIELDS_EMPTY = 'Please fill in all the relevant fields.';
 var DISPLAY_INVALID_INPUT = 'Unexpected error. Invalid Input';
 
-// Used in instructorFeedback.js only
+// Used in instructorFeedbacks.js only
 var FEEDBACK_SESSION_COPY_INVALID = 'There is no feedback session to be copied.';
 var FEEDBACK_QUESTION_COPY_INVALID = 'There is no feedback question to be copied.';
 var DISPLAY_FEEDBACK_SESSION_NAME_DUPLICATE = 'This feedback session name already existed in this course. Please use another name.';
@@ -137,14 +137,25 @@ var TEAMNAME_MAX_LENGTH = 60;
 var NAME_MAX_LENGTH = 40;
 var INSTITUTION_MAX_LENGTH = 64;
 
-var util = {
+$(document).on('ajaxComplete ready', function() {
+    /**
+     * Initializing then disabling is better than simply
+     * not initializing for mobile due to some tooltips-specific
+     * code that throws errors.
+    */
+    var $tooltips = $('[data-toggle="tooltip"]');
+    $tooltips.tooltip({html: true, container: 'body'});
+    if (isTouchDevice()) {
+        $tooltips.tooltip('disable');
+    }
+});
 
 /**
  * Checks if the current device is touch based device
  * Reference: https://github.com/Modernizr/Modernizr/blob/master/feature-detects/touchevents.js
  */
-isTouchDevice: function() {
-	return true === (('ontouchstart' in window) || (window.DocumentTouch && document instanceof DocumentTouch));
+function isTouchDevice() {
+    return true === (('ontouchstart' in window) || (window.DocumentTouch && document instanceof DocumentTouch));
 }
 
 /**
@@ -154,7 +165,7 @@ isTouchDevice: function() {
  * @param comparator
  *     The function to compare 2 elements
  */
-toggleSort: function(divElement, comparator) {
+function toggleSort(divElement, comparator) {
 
     // The column index (1-based) as key for the sort
     var colIdx = $(divElement).parent().children().index($(divElement)) + 1;
@@ -165,18 +176,18 @@ toggleSort: function(divElement, comparator) {
     var $selectedDivElement = $(divElement);
     
     if ($selectedDivElement.attr('class') === 'button-sort-none') {
-        util.sortTable(divElement, colIdx, comparator, true, row);
+        sortTable(divElement, colIdx, comparator, true, row);
         $selectedDivElement.parent().find('.button-sort-ascending').attr('class', 'button-sort-none');
         $selectedDivElement.parent().find('.button-sort-descending').attr('class', 'button-sort-none');
         $selectedDivElement.parent().find('.icon-sort').attr('class', 'icon-sort unsorted');
         $selectedDivElement.attr('class', 'button-sort-ascending');
         $selectedDivElement.find('.icon-sort').attr('class', 'icon-sort sorted-ascending');
     } else if ($selectedDivElement.attr('class') === 'button-sort-ascending') {
-        util.sortTable(divElement, colIdx, comparator, false, row);
+        sortTable(divElement, colIdx, comparator, false, row);
         $selectedDivElement.attr('class', 'button-sort-descending');
         $selectedDivElement.find('.icon-sort').attr('class', 'icon-sort sorted-descending');
     } else {
-        util.sortTable(divElement, colIdx, comparator, true, row);
+        sortTable(divElement, colIdx, comparator, true, row);
         $selectedDivElement.attr('class', 'button-sort-ascending');
         $selectedDivElement.find('.icon-sort').attr('class', 'icon-sort sorted-ascending');
     }
@@ -193,7 +204,7 @@ toggleSort: function(divElement, comparator) {
  * @param ascending
  *     if this is true, it will be ascending order, else it will be descending order
  */
-sortTable: function(oneOfTableCell, colIdx, comparator, ascending, row) {
+function sortTable(oneOfTableCell, colIdx, comparator, ascending, row) {
     // Get the table
     var $table = $(oneOfTableCell);
     
@@ -219,9 +230,9 @@ sortTable: function(oneOfTableCell, colIdx, comparator, ascending, row) {
         // Store rows together with the innerText to compare
         store.push([innerText, $RowList[i], i]);
         
-        if ((columnType === 0 || columnType === 1) && util.isNumber(innerText)) {
+        if ((columnType === 0 || columnType === 1) && isNumber(innerText)) {
             columnType = 1;
-        } else if ((columnType === 0 || columnType === 2) && util.isDate(innerText)) {
+        } else if ((columnType === 0 || columnType === 2) && isDate(innerText)) {
             columnType = 2;
         } else {
             columnType = 3;
@@ -234,7 +245,7 @@ sortTable: function(oneOfTableCell, colIdx, comparator, ascending, row) {
         } else if (columnType === 2) {
             comparator = sortDate;
         } else {
-            comparator = util.sortBase;
+            comparator = sortBase;
         }
     }
     
@@ -279,7 +290,7 @@ sortTable: function(oneOfTableCell, colIdx, comparator, ascending, row) {
  * @param y
  * @returns
  */
-sortBase: function(x, y) {
+function sortBase(x, y) {
     // Text sorting
     return (x < y ? -1 : x > y ? 1 : 0);
 }
@@ -291,7 +302,7 @@ sortBase: function(x, y) {
  * @param y
  * @returns
  */
-sortNum: function(x, y) {
+function sortNum(x, y) {
     return x - y;
 }
 
@@ -302,7 +313,7 @@ sortNum: function(x, y) {
  * @param y
  * @returns 1 if Date x is after y, 0 if same and -1 if before
  */
-sortDate: function(x, y) {
+function sortDate(x, y) {
     x = Date.parse(x);
     y = Date.parse(y);
     var comparisonResult = (x > y) ? 1 : (x < y) ? -1 : 0;
@@ -314,7 +325,7 @@ sortDate: function(x, y) {
 *
 * @returns pattern string
 */
-getDayMonthYearFormat: function() {
+function getDayMonthYearFormat() {
     return /^\s*(\d{2})[\/\- ](\d{2})[\/\- ](\d{4}|\d{2})\s*$/;
 }
 
@@ -330,7 +341,7 @@ getDayMonthYearFormat: function() {
  * @param date
  * @returns boolean
  */
-isDate: function(date) {
+function isDate(date) {
     return !isNaN(Date.parse(date));
 }
 
@@ -339,7 +350,7 @@ isDate: function(date) {
 * @param num
 * @returns boolean
 */
-isNumber: function(num) {
+function isNumber(num) {
     return (typeof num === 'string' || typeof num === 'number') && !isNaN(num - 0) && num !== '';
 }
 
@@ -350,14 +361,14 @@ isNumber: function(num) {
  * @param a
  * @param b
  */
-sortByPoint: function(a, b) {
-    a = util.getPointValue(a, true);
-    b = util.getPointValue(b, true);
+function sortByPoint(a, b) {
+    a = getPointValue(a, true);
+    b = getPointValue(b, true);
     
-    if (util.isNumber(a) && util.isNumber(b)) {
-        return util.sortNum(a, b);
+    if (isNumber(a) && isNumber(b)) {
+        return sortNum(a, b);
     } else {
-        return util.sortBase(a, b);
+        return sortBase(a, b);
     }
 }
 
@@ -368,14 +379,14 @@ sortByPoint: function(a, b) {
  * @param a
  * @param b
  */
-sortByDiff: function(a, b) {
-    a = util.getPointValue(a, false);
-    b = util.getPointValue(b, false);
+function sortByDiff(a, b) {
+    a = getPointValue(a, false);
+    b = getPointValue(b, false);
 
-    if (util.isNumber(a) && util.isNumber(b)) {
-        return util.sortNum(a, b);
+    if (isNumber(a) && isNumber(b)) {
+        return sortNum(a, b);
     } else {
-        return util.sortBase(a, b);
+        return sortBase(a, b);
     }
 }
 
@@ -388,7 +399,7 @@ sortByDiff: function(a, b) {
  *     Whether 0% should be treated as lower than -90 or not
  * @returns
  */
-getPointValue: function(s, ditchZero) {
+function getPointValue(s, ditchZero) {
     if (s.lastIndexOf('<') !== -1) {
         s = s.substring(0, s.lastIndexOf('<'));
         s = s.substring(s.lastIndexOf('>') + 1);
@@ -427,7 +438,7 @@ getPointValue: function(s, ditchZero) {
  * Checks if element is within browser's viewport.
  * @return true if it is within the viewport, false otherwise 
  */
-isWithinView: function(element) {
+function isWithinView(element) {
     var viewHeight = window.innerHeight,
         viewTop = window.scrollY,
         viewBottom = viewTop + viewHeight;
@@ -449,7 +460,7 @@ isWithinView: function(element) {
  *                 'fast and 'slow' are 600 and 200 ms respectively,
  *                 400 ms will be used if any other string is supplied.
  */
-scrollToPosition: function(scrollPos, duration) {
+function scrollToPosition(scrollPos, duration) {
     if (duration === undefined) {
         $(window).scrollTop(scrollPos);
     } else {
@@ -471,7 +482,7 @@ scrollToPosition: function(scrollPos, duration) {
  *                  * duration: duration of animation,
  *                              defaults to 0 for scrolling without animation
  */
-scrollToElement: function(element, options) {
+function scrollToElement(element, options) {
     var defaultOptions = {type: 'top', offset: 0, duration: 0};
     
     options = options || {};
@@ -480,7 +491,7 @@ scrollToElement: function(element, options) {
         duration = options.duration !== undefined ? options.duration : defaultOptions.duration;
     
     var isViewType = (type === 'view');
-    if (isViewType && util.isWithinView(element)) {
+    if (isViewType && isWithinView(element)) {
         return;
     }
     
@@ -507,7 +518,7 @@ scrollToElement: function(element, options) {
     
     var scrollPos = element.offsetTop + offset;
     
-    util.scrollToPosition(scrollPos, duration);
+    scrollToPosition(scrollPos, duration);
 }
 
 /**
@@ -516,9 +527,12 @@ scrollToElement: function(element, options) {
  *                 'fast and 'slow' are 600 and 200 ms respectively,
  *                 400 ms will be used if any other string is supplied.
  */
-scrollToTop: function(duration) {
-    util.scrollToPosition(0, duration);
+function scrollToTop(duration) {
+    scrollToPosition(0, duration);
 }
+
+/** Selector for status message div tag (to be used in jQuery) */
+var DIV_STATUS_MESSAGE = '#statusMessage';
 
 /**
  * Sets a status message. Change the background color to red if it's an error
@@ -526,9 +540,9 @@ scrollToTop: function(duration) {
  * @param message
  * @param error
  */
-setStatusMessage: function(message, error) {
+function setStatusMessage(message, error) {
     if (message === '') {
-        util.clearStatusMessage();
+        clearStatusMessage();
         return;
     }
     
@@ -541,7 +555,7 @@ setStatusMessage: function(message, error) {
         $(DIV_STATUS_MESSAGE).attr('class', 'overflow-auto alert alert-warning');
     }
     
-    util.scrollToElement($(DIV_STATUS_MESSAGE)[0], {offset: window.innerHeight / 2 * -1});
+    scrollToElement($(DIV_STATUS_MESSAGE)[0], {offset: window.innerHeight / 2 * -1});
 }
 
 /**
@@ -549,7 +563,7 @@ setStatusMessage: function(message, error) {
  * @param  message
  * 
  */
-appendStatusMessage: function(message, error) {
+function appendStatusMessage(message, error) {
     if (message.trim() === '') {
         return;
     }
@@ -557,14 +571,14 @@ appendStatusMessage: function(message, error) {
     if (currentContent.trim() !== '') {
         $(DIV_STATUS_MESSAGE).html(currentContent + '<br/>' + message);    
     } else {
-        util.setStatusMessage(message, error);
+        setStatusMessage(message, error);
     }
 }
 
 /**
  * Clears the status message div tag and hides it
  */
-clearStatusMessage: function() {
+function clearStatusMessage() {
     $(DIV_STATUS_MESSAGE).html('');
     $(DIV_STATUS_MESSAGE).css('background', '');
     $(DIV_STATUS_MESSAGE).attr('style', 'display: none;');
@@ -577,7 +591,7 @@ clearStatusMessage: function() {
  * @param googleId
  * @returns sanitizedGoolgeId
  */
-sanitizeGoogleId: function(googleId) {
+function sanitizeGoogleId(googleId) {
     googleId = googleId.trim();
     var loc = googleId.toLowerCase().indexOf('@gmail.com');
     if (loc > -1) {
@@ -593,8 +607,7 @@ sanitizeGoogleId: function(googleId) {
  * @param googleId
  * @return {Boolean}
  */
-
-isValidGoogleId: function(googleId) {
+function isValidGoogleId(googleId) {
     var isValidNonEmailGoogleId = false;
     googleId = googleId.trim();
     
@@ -603,7 +616,7 @@ isValidGoogleId: function(googleId) {
     
     isValidNonEmailGoogleId = (matches != null && matches[0] === googleId);
     
-    var isValidEmailGoogleId = util.isEmailValid(googleId);
+    var isValidEmailGoogleId = isEmailValid(googleId);
     
     if (googleId.toLowerCase().indexOf('@gmail.com') > -1) {
         isValidEmailGoogleId = false;
@@ -620,7 +633,7 @@ isValidGoogleId: function(googleId) {
  * @param email
  * @returns {Boolean}
  */
-isEmailValid: function(email) {
+function isEmailValid(email) {
     return email.match(/^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i) != null;
 }
 
@@ -631,7 +644,7 @@ isEmailValid: function(email) {
  * @param name
  * @returns {Boolean}
  */
-isNameValid: function(name) {
+function isNameValid(name) {
     name = name.trim();
 
     if (name === '') {
@@ -657,7 +670,7 @@ isNameValid: function(name) {
  * @param name
  * @returns {Boolean}
  */
-isInstitutionValid: function(institution) {
+function isInstitutionValid(institution) {
     institution = institution.trim();
 
     if (institution === '') {
@@ -681,7 +694,7 @@ isInstitutionValid: function(institution) {
  * Disallow non-numeric entries
  * [Source: http://stackoverflow.com/questions/995183/how-to-allow-only-numeric-0-9-in-html-inputbox-using-jquery]
  */
-disallowNonNumericEntries: function(element, decimalPointAllowed, negativeAllowed) {
+function disallowNonNumericEntries(element, decimalPointAllowed, negativeAllowed) {
     element.on('keydown', function(event) {
         var key = event.which;
         // Allow: backspace, delete, tab, escape, and enter
@@ -712,35 +725,23 @@ disallowNonNumericEntries: function(element, decimalPointAllowed, negativeAllowe
 /**
  * Helper function to replace all occurrences of a sub-string in a string.
  */
-replaceAll: function(string, find, replace) {
-    return string.replace(new RegExp(util.escapeRegExp(find), 'g'), replace);
+function replaceAll(string, find, replace) {
+    return string.replace(new RegExp(escapeRegExp(find), 'g'), replace);
 }
 
-escapeRegExp: function(string) {
+function escapeRegExp(string) {
     return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, '\\$1');
 }
 
 /**
  * Sanitizes special characters such as ' and \ to \' and \\ respectively
  */
-sanitizeForJs: function(string) {
-    string = util.replaceAll(string, '\\', '\\\\');
-    string = util.replaceAll(string, '\'', '\\\'');
+function sanitizeForJs(string) {
+    string = replaceAll(string, '\\', '\\\\');
+    string = replaceAll(string, '\'', '\\\'');
     return string;
 }
 
-/**
- * Checks if the input value is a blank string
- * 
- * @param str
- * @returns true if the input is a blank string, false otherwise
- */
-isBlank: function(str) {
-    if (typeof str !== 'string' && !(str instanceof String)) {
-        return false;
-    }
-    return str.trim() === '';
-}
 
 /**
  * Highlights all words of searchKey (case insensitive), in a particular section
@@ -749,24 +750,11 @@ isBlank: function(str) {
  * @param sectionToHighlight - sections to higlight separated by ',' (comma) 
  *                             Example- '.panel-body, #panel-data, .sub-container'
  */
-highlightSearchResult: function(searchKeyId, sectionToHighlight) {
+function highlightSearchResult(searchKeyId, sectionToHighlight) {
     var searchKey = $(searchKeyId).val();
     var splitSearchKey = searchKey.split(' ');
     $(sectionToHighlight).highlight(splitSearchKey);
-}};
-
-$(document).on('ajaxComplete ready', function() {
-    /**
-     * Initializing then disabling is better than simply
-     * not initializing for mobile due to some tooltips-specific
-     * code that throws errors.
-    */
-    var $tooltips = $('[data-toggle="tooltip"]');
-    $tooltips.tooltip({html: true, container: 'body'});
-    if (util.isTouchDevice()) {
-        $tooltips.tooltip('disable');
-    }
-});
+}
 
 /**
  * Polyfills the String.prototype.includes function finalized in ES6 for browsers that do not yet support
@@ -779,28 +767,15 @@ if (!String.prototype.includes) {
     }
 }
 
-/** Selector for status message div tag (to be used in jQuery) */
-var DIV_STATUS_MESSAGE = '#statusMessage';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Checks if the input value is a blank string
+ * 
+ * @param str
+ * @returns true if the input is a blank string, false otherwise
+ */
+function isBlank(str) {
+    if (typeof str !== 'string' && !(str instanceof String)) {
+        return false;
+    }
+    return str.trim() === '';
+}
